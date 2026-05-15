@@ -1,0 +1,110 @@
+version: 2
+
+sources:
+  - name: raw
+    database: ECOMM_DB
+    schema: RAW
+    description: "Raw tables loaded from synthetic e-commerce data generator"
+    tables:
+      - name: raw_customers
+        description: "Customer master records"
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+          - name: email
+            tests: [unique, not_null]
+          - name: segment
+            tests:
+              - accepted_values:
+                  values: ["B2C","B2B","Premium","Budget"]
+
+      - name: raw_products
+        description: "Product catalog"
+        columns:
+          - name: product_id
+            tests: [unique, not_null]
+          - name: unit_price
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "> 0"
+
+      - name: raw_orders
+        description: "Order header records"
+        columns:
+          - name: order_id
+            tests: [unique, not_null]
+          - name: customer_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'raw_customers')
+                  field: customer_id
+          - name: order_status
+            tests:
+              - accepted_values:
+                  values: ["Delivered","Shipped","Processing","Cancelled","Refunded","Pending"]
+
+      - name: raw_order_items
+        description: "Line items for each order"
+        columns:
+          - name: item_id
+            tests: [unique, not_null]
+          - name: order_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'raw_orders')
+                  field: order_id
+          - name: product_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'raw_products')
+                  field: product_id
+          - name: total_amount
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: ">= 0"
+
+      - name: raw_returns
+        description: "Return requests linked to order items"
+        columns:
+          - name: return_id
+            tests: [unique, not_null]
+          - name: return_status
+            tests:
+              - accepted_values:
+                  values: ["Approved","Rejected","Pending"]
+
+models:
+  - name: stg_customers
+    description: "Cleaned customer records with proper types and derived fields"
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+
+  - name: stg_products
+    description: "Cleaned product catalog with margin calculated"
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+
+  - name: stg_orders
+    description: "Cleaned order headers"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+
+  - name: stg_order_items
+    description: "Cleaned order line items"
+    columns:
+      - name: item_id
+        tests: [unique, not_null]
+
+  - name: stg_returns
+    description: "Cleaned return records"
+    columns:
+      - name: return_id
+        tests: [unique, not_null]

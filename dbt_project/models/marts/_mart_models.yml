@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: mart_sales_daily
+    description: "Daily sales aggregated by channel and country. Primary BI source for Power BI dashboard."
+    columns:
+      - name: sales_key
+        tests: [unique, not_null]
+      - name: gross_revenue
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: net_revenue
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_customer_360
+    description: "Customer-level analytics with RFM scoring, lifetime value, return rates, and tier classification."
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: customer_tier
+        tests:
+          - accepted_values:
+              values: ["Champions","Loyal","Potential Loyalist","At Risk / Churned","Needs Attention"]
+
+  - name: mart_product_performance
+    description: "Product-level sales, profitability, return rates, and category rankings."
+    columns:
+      - name: product_key
+        tests: [unique, not_null]
+
+  - name: mart_returns_analysis
+    description: "Enriched returns data with order, product, and customer context for returns analytics."
+    columns:
+      - name: return_key
+        tests: [unique, not_null]

@@ -1,0 +1,42 @@
+name: ecomm_dw
+version: '1.0.0'
+config-version: 2
+
+profile: ecomm_snowflake
+
+model-paths:  ["models"]
+test-paths:   ["tests"]
+macro-paths:  ["macros"]
+
+target-path:  "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  ecomm_dw:
+    staging:
+      +schema:       staging
+      +materialized: view          # staging = views (cheap, always fresh)
+      +tags:         ["staging"]
+
+    intermediate:
+      +schema:       intermediate
+      +materialized: ephemeral     # intermediate = CTEs, no physical table
+
+    marts:
+      +schema:       marts
+      +materialized: table         # marts = physical tables for BI
+      +tags:         ["marts"]
+      mart_sales_daily:
+        +materialized: incremental
+        +unique_key:   "date_day || '-' || channel || '-' || country"
+      mart_customer_360:
+        +materialized: table
+      mart_product_performance:
+        +materialized: table
+      mart_returns_analysis:
+        +materialized: table
+
+vars:
+  # Override in CI or Airflow runs: dbt run --vars '{"start_date": "2024-01-01"}'
+  start_date: "2022-01-01"
+  end_date:   "2024-12-31"

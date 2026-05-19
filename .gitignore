@@ -1,0 +1,8 @@
+venv/
+airflow_venv/
+airflow/airflow.db
+airflow/logs/
+airflow/airflow-webserver.pid
+dbt_project/target/
+venv/
+venv/
